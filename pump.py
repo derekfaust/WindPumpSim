@@ -14,12 +14,24 @@ class Turbine:
 
 
 class Turbine:
-    def __init__(self, output):
-        self.omega = output[:,1]
-        self.torque = output[:,2]
+    theta = 0
+    omega = 0
+    omegadot = 0
+    def __init__(self, I, performance, output):
+        self.I = I
+        self.omega = performance[:,1]
+        self.torque = performance[:,2]
+        self.output = output
+        # return self?
     def Tin(self, omega):
         return np.interp(omega, self.TorqueCurve[:,0], self.TorqueCurve[:,1])
-    def Tout(self, time)
+    def Tout(self, time):
+        return output.get_torque(time)
+    def set_state(self, time, state):
+        [theta, omega, omegadot] = state
+        return true
+    def get_state(self,time)
+        return [theta, omega, omegadot]
 
 class Pump:
     g = 9.8

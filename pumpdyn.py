@@ -19,10 +19,13 @@ def solveODE(f, tarray, z0, p):
         zarray[idx,:] = eqn.y
     return zarray
 
-def rhs(t, z, p):
-    omega = z[0]
-    KE = z[1]
-    P = (p.Tin(omega)-p.Tout(t))*omega
+def rhs(t, z, turbine):
+    theta = z[0]
+    omega = z[1]
+    KE = .5 * omega**2 * turbine.I
+    #Need to return omegadot. How??
+    turbine.set_state(t, [theta, omega, omegadot])
+    P = (turbine.Tin(omega)-turbine.Tout(t))*omega
     #print p.Tin(omega)
     #print t, omega, p.Tin(omega)
     if (KE <= 0) and (P<=0):
@@ -31,5 +34,6 @@ def rhs(t, z, p):
         zdot = np.array([-omega,P])
     else:
         zdot = np.array([sqrt(2*KE/p.Idrive)-omega,P])
+    turbine.set_state(
     return zdot
 
