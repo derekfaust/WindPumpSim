@@ -92,14 +92,14 @@ class Piston:
         return [xpos(state), xdot(state)]
 
     def xpos(self, state):
-        theta = state[0]
+        theta = state[0]+self.theta0
         comp1 = self.r_c*cos(theta)
         comp2 = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
         xpos = comp1+comp2
         return xpos
 
     def xdot(self, state):
-        theta = state[0]
+        theta = state[0]+self.theta0
         omega = state[1]
         xdot = omega*self.xdotcoef(theta)
         return xdot
@@ -129,14 +129,18 @@ class Piston:
         pumpingpower = backpressure*self.area*self.xdot(state)
         T_rod = torque/(self.r_c*sin(pi-theta-self.alpha(theta)))
         power_lost_friction = abs(self.mu*T_rod*sin(theta)*self.xdot(state))
-        #power_lost_friction = 0
+        power_lost_friction = 0
         power_out = pumpingpower + power_lost_friction
         return power_out
 
     def de_omegadot_coef(self, state):
-        coef = self.mass*state[1]*self.xdotcoef(state[0])**2
+        theta = state[0]+self.theta0
+        omega = state[1]
+        coef = self.mass*omega*self.xdotcoef(theta)**2
         return coef
 
     def de_offset(self, state):
-        offset = self.mass*state[1]**3*self.xdotcoef(state[0])*self.xddotcoef(state[0])
+        theta = state[0]+theta0
+        omega = state[1]
+        offset = self.mass*omega**3*self.xdotcoef(theta)*self.xddotcoef(theta)
         return offset

@@ -10,13 +10,16 @@ import statepredictor as sp
 from pump import *
 
 #Simulation Parameters
-timespan = [0,100]
+timespan = [0,10]
 timesteps = 1000
 initial_theta= 0
 initial_omega= 10
 
 #Turbine Parameters
 turbine_I = 1
+in_sprocket_teeth = 9
+out_sprocket_teeth = 70
+gear_ratio = out_sprocket_teeth/in_sprocket_teeth
 omega_torque_curve = np.array([[0,  0],
                                [20, 5],
                                [40, 4],
@@ -24,6 +27,9 @@ omega_torque_curve = np.array([[0,  0],
                                [80, 2],
                                [100,1],
                                [120,0]])
+omega_torque_curve[:,0] = omega_torque_curve[:,0]/gear_ratio
+omega_torque_curve[:,1] = omega_torque_curve[:,1]*gear_ratio
+
 #Piston Parameters
 crank_radius = .03
 rod_length = .3
