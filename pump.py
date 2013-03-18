@@ -4,7 +4,7 @@ import numpy as np
 import pylab as plot
 from math import *
 
-class Turbine:
+class DummyTurbine:
     Idrive = 1
     TorqueCurve = np.array([[0,0],[20,5],[40,4],[60,3],[80,2],[100,1]])
     Aout = 2
@@ -22,15 +22,15 @@ class Turbine:
         self.omega = performance[:,1]
         self.torque = performance[:,2]
         self.output = output
-        # return self?
     def Tin(self, omega):
         return np.interp(omega, self.TorqueCurve[:,0], self.TorqueCurve[:,1])
+    #Pump is in control, no need to get pump torque.
     def Tout(self, time):
         return output.get_torque(time)
-    def set_state(self, time, state):
+    def set_state(self, state):
         [theta, omega, omegadot] = state
         return true
-    def get_state(self,time)
+    def get_state(self)
         return [theta, omega, omegadot]
     def power(self, state):
         return state[1]*self.Tin(state[1])
@@ -43,9 +43,7 @@ class Pump:
     vol_pumped=0
     max_pressure=rho_w*g*tube_height
     tube_area = tube_radius**2*math.pi
-    theta = 0
-    omega = 0
-    omegadot = 0
+    state = [0,0,0]
     def __init__(self, drivesystem):
         self.drive = drivesystem
         mechanism = Piston(self, .03, .3, .03, .25, 0)
@@ -55,7 +53,9 @@ class Pump:
         else
             return 0
     def get_state(self):
-        return [self.theta, self.omega, self.omegadot]
+        return state
+    #DO NOT USE
+    #State-based, not time-based, for now.
     def make_state(self, time):
         if lastupdate == time:
             return false
@@ -64,21 +64,14 @@ class Pump:
             self.theta += self.theta0
             self.lastupdate = time
             return true
-    def get_torque(self, time):
-        make_state(time)
-        torque = mechanism.get_torque(time)
+    def get_torque(self, state):
+        torque = mechanism.get_torque(state)
         return torque
     def net_power(self, state):
         return drive.power(state) + mechanism.power(state)
 
 class Piston:
-    theta = 0
-    omega = 0
-    omegadot = 0
-    alpha = 0
-    xpos = 0
-    xdot = 0
-    xddot = 0
+    state [0, 0]
     lastupdate = 0
     mu = .5
     def __init__(self, pump, r_crank, r_rod, r_piston, m_piston, theta)
@@ -88,8 +81,10 @@ class Piston:
         self.m_p = m_piston
         self.area = r_piston**2*pi
         self.theta0 = theta
-        make_state()
-
+        #make_state()
+    
+    #DO NOT USE
+    #State-based, not time-based, for now.
     def make_state(self, time)
         if lastupdate == time:
             return false
@@ -99,17 +94,28 @@ class Piston:
             self.alpha = asin(self.r_c/self.r_r*sin(theta))
             self.xpos = xpos(self, theta, omega, omegadot)
             self.xdot = xdot(self, theta, omega, omegadot)
-            self.xddot = xddot(self, theta, omega, omegadot)
+            #Incalculable
+            #self.xddot = xddot(self, theta, omega, omegadot)
             self.lastupdate = time
             return true
 
-    def xpos(self, theta, omega, omegadot):
+    def alpha(self, theta):
+        return asin(self.r_c/self.r_r*sin(theta))
+
+    def xstate(self, state):
+        return [xpos(state), xdot(state)]
+
+    def xpos(self, state):
+        theta = state[0]
+        omega = state[1]
         comp1 = self.r_c*cos(theta)
         comp2 = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
         xpos = comp1+comp2
         return xpos
 
-    def xdot(self, theta, omega, omegadot):
+    def xdot(self, state):
+        theta = state[0]
+        omega = state[1]
         comp1 = self.r_c*sin(theta)
         denom = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
         comp2 = (self.r_c**2*sin(theta)*cos(theta))/denom
@@ -117,7 +123,12 @@ class Piston:
         return xdot
     
     #BROKEN
-    def xddot(self, theta, omega, omegadot):    #OmegaDot is unknown
+    #OmegaDot is unknown
+    def xddot(self, state):
+        theta = state[0]
+        omega = state[1]
+        omegadot
+        print "Omegadot is incalculatble!"
         denom = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
         comp1 = self.r_c*sin(theta)
         comp2 = self.r_c**2*sin(theta)*cos(theta)
@@ -143,4 +154,3 @@ class Piston:
         v = self.xdot(self, state)
         pumpingpower = masterpump.backpressure(self.area*v)
         return pumpingpower
-
