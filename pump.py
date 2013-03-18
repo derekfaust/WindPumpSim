@@ -20,7 +20,7 @@ class Turbine:
         self.torque = performance[:,1]
     
     def Tin(self, omega):
-        return np.interp(omega, self.TorqueCurve[:,0], self.TorqueCurve[:,1])
+        return np.interp(omega, self.omega, self.torque)
 
     def set_state(self, state):
         [theta, omega, omegadot] = state
@@ -56,21 +56,21 @@ class Pump:
             return 0
 
     def get_state(self):
-        return state
+        return self.state
 
     def get_torque(self, state):
-        torque = mechanism.get_torque(state)
+        torque = self.mechanism.get_torque(state)
         return torque
 
     def net_power(self, state):
-        bp = self.backpressure(mechanism.Q(state))
-        mech_power = mechanism.power(state, bp)
-        return drive.power(state) + mech_power
+        bp = self.backpressure(self.mechanism.Q(state))
+        mech_power = self.mechanism.power(state, bp)
+        return self.drive.power(state) + mech_power
 
     def omegadot(self, state):
-        pnet = self.netpower(state)
-        c_omegadot_t = self.drive.de_omegadot_coeff(state)
-        c_omegadot_m = self.mechanism.de_omegadot_coeff(state)
+        pnet = self.net_power(state)
+        c_omegadot_t = self.drive.de_omegadot_coef(state)
+        c_omegadot_m = self.mechanism.de_omegadot_coef(state)
         b_de_m = self.mechanism.de_offset(state)
         omegadot = (pnet - b_de_m)/(c_omegadot_t+c_omegadot_m)
         return omegadot
@@ -89,7 +89,7 @@ class Piston:
     def __init__(self, r_crank, r_rod, r_piston, m_piston, theta):
         self.r_c = r_crank
         self.r_r = r_rod
-        self.m_p = m_piston
+        self.mass = m_piston
         self.area = r_piston**2*pi
         self.theta0 = theta
     
@@ -123,15 +123,18 @@ class Piston:
         denom = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
         coef = (self.r_c**2/denom+num/(denom**3)+self.r_c*cos(theta))
         return coef
+
+    def Q(self, state):
+        return self.xdot(state)*self.area
     
     def power(self, state, backpressure):
         pumpingpower = backpressure*self.area
         return pumpingpower
 
-    def de_omegadot_coeff(self, state):
-        coef = self.m*state[1]*xdotcoef(state[0])**2
+    def de_omegadot_coef(self, state):
+        coef = self.mass*state[1]*self.xdotcoef(state[0])**2
         return coef
 
     def de_offset(self, state):
-        offset = self.m*state[1]**3*xdotcoef(state[0])*xddotcoef(state[0])
+        offset = self.mass*state[1]**3*self.xdotcoef(state[0])*self.xddotcoef(state[0])
         return offset
