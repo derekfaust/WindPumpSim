@@ -3,15 +3,6 @@ from __future__ import division
 import numpy as np
 from math import *
 
-class DummyTurbine:
-    Idrive = 1
-    TorqueCurve = np.array([[0,0],[20,5],[40,4],[60,3],[80,2],[100,1]])
-    Aout = 2
-    OutPeriod = 2
-    def Tout(self, t):
-        return self.Aout*(1+sin(t/self.OutPeriod))
-
-
 class Turbine:
     def __init__(self, I, performance):
         self.I = I
