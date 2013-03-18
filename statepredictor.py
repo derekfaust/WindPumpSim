@@ -4,16 +4,15 @@ import numpy as np
 from math import *
 from scipy.integrate import ode
 
-def solve_ode(f, tarray, z0, p):
-    print np.size(tarray)
-    print np.size(z0)
-    zarray = np.zeros((np.size(tarray), np.size(z0)))
+def predict(f, times, z0, parameters):
+    print np.size(times)
+    print np.size(initial_state)
+    state_array = np.zeros((np.size(times), np.size(initial_state)))
     eqn = ode(f).set_integrator('vode')
-    eqn.set_initial_value(z0, tarray[0]).set_f_params(p)
-    zarray[0,:] = z0;
-    idx=0
-    for time in np.nditer(tarray[1:]):
-        idx = idx+1
+    eqn.set_initial_value(initial_state, times[0]).set_f_params(parameters)
+    state_array[0,:] = initial_state;
+    for index in range(1,size(times))
+        time = times[index]
         eqn.integrate(time)
-        zarray[idx,:] = eqn.y
-    return zarray
+        zarray[index,:] = eqn.y
+    return state_array
