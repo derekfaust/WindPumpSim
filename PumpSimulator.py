@@ -10,7 +10,7 @@ import statepredictor as sp
 from pump import *
 
 #Simulation Parameters
-timespan = [0,100]
+timespan = [0,2]
 timesteps = 1000
 initial_theta= 0
 initial_omega= 20
@@ -33,7 +33,7 @@ initial_piston_angle = 0
 
 #Initial Conditions
 times = np.linspace(timespan[0],timespan[1],timesteps)
-initial_state = np.array([initial_theta,initial_omega])
+initial_state = np.array([initial_theta,initial_omega, 0])
 
 #Create Objects to Simulate
 the_turbine = Turbine(turbine_I, omega_torque_curve)
@@ -43,10 +43,17 @@ the_pump = Pump(the_turbine, one_piston)
 
 states = sp.predict(the_pump.statedot, times, initial_state, [])
 
-#Plot the velocity vs time
+#Plot the angular velocity and water pumped vs time
 fig = plot.figure(1)
+plot.subplot('211')
 plot.plot(times, states[:,1], 'k')
-plot.xlabel('Time')
-plot.ylabel('Omega')
+plot.xlabel('Time (s)')
+plot.ylabel('Omega (rad/s)')
 plot.title('Pump')
+plot.subplot('212')
+plot.plot(times, states[:,2]*1000, 'k')
+plot.xlabel('Time (s)')
+plot.ylabel('Volume Pumped (L)')
+plot.title('Pump')
+fig.tight_layout()
 plot.show()

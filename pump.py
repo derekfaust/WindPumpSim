@@ -67,9 +67,11 @@ class Pump:
         return omegadot
 
     def statedot(self, t, state, p):
+        #state = [theta, omega, vol]
         thetadot = state[1]
         omegadot = self.omegadot(state)
-        statedot = [thetadot, omegadot]
+        voldot = self.mechanism.Q(state)
+        statedot = [thetadot, omegadot, voldot]
         return statedot
 
 class Piston:
