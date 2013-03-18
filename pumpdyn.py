@@ -4,7 +4,7 @@ import numpy as np
 from math import *
 from scipy.integrate import ode
 
-def solveODE(f, tarray, z0, p):
+def solve_ode(f, tarray, z0, p):
     print np.size(tarray)
     print np.size(z0)
     zarray = np.zeros((np.size(tarray), np.size(z0)))
@@ -18,7 +18,7 @@ def solveODE(f, tarray, z0, p):
         zarray[idx,:] = eqn.y
     return zarray
 
-def rhs(t, z, pump):
+def delta_state(t, z, pump):
     state = z
     thetadot = omega
     omegadot = pump.omegadot(state)
