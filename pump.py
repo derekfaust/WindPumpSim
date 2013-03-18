@@ -43,7 +43,7 @@ class Pump:
     vol_pumped=0
     max_pressure=rho_w*g*tube_height
     tube_area = tube_radius**2*pi
-    state = [0,0,0]
+    state = [0,0]
     
     def __init__(self, drivesystem, mechanism):
         self.drive = drivesystem
@@ -75,7 +75,8 @@ class Pump:
         omegadot = (pnet - b_de_m)/(c_omegadot_t+c_omegadot_m)
         return omegadot
 
-    def statedot(t, state):
+    def statedot(self, t, state, p):
+        print state
         thetadot = state[1]
         omegadot = self.omegadot(state)
         statedot = [thetadot, omegadot]
