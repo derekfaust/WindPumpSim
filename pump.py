@@ -42,7 +42,7 @@ class Pump:
     rho_w=1000
     vol_pumped=0
     max_pressure=rho_w*g*tube_height
-    tube_area = tube_radius**2*math.pi
+    tube_area = tube_radius**2*pi
     state = [0,0,0]
     
     def __init__(self, drivesystem, mechanism):
@@ -51,8 +51,8 @@ class Pump:
     
     def backpressure(self, Q):
         if Q > 0:
-            return min(self.max_pressure, self.rho_w*self.g*(self.vol_pumped/self.tube_area)
-        else
+            return min(self.max_pressure, self.rho_w*self.g*(self.vol_pumped/self.tube_area))
+        else:
             return 0
 
     def get_state(self):
@@ -80,12 +80,11 @@ class Pump:
         return statedot
 
 class Piston:
-    state [0, 0]
-    lastupdate = 0
+    state = [0, 0]
     mu = .5
     
-    def __init__(self, pump, r_crank, r_rod, r_piston, m_piston, theta)
-        masterpump = pump
+    def __init__(self, pump, r_crank, r_rod, r_piston, m_piston, theta):
+        self.masterpump = pump
         self.r_c = r_crank
         self.r_r = r_rod
         self.m_p = m_piston
@@ -100,7 +99,6 @@ class Piston:
 
     def xpos(self, state):
         theta = state[0]
-        omega = state[1]
         comp1 = self.r_c*cos(theta)
         comp2 = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
         xpos = comp1+comp2
@@ -122,9 +120,9 @@ class Piston:
         num = (self.r_c**2*cos(theta)*sin(theta))**2
         denom = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
         coef = (self.r_c**2/denom+num/(denom**3)+self.r_c*cos(theta))
+        return coef
     
     def power(self, state):
-        x = self.xpos(self, state)
         v = self.xdot(self, state)
         pumpingpower = masterpump.backpressure(self.area*v)
         return pumpingpower

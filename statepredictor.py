@@ -11,7 +11,7 @@ def predict(statedot, times, initial_state, parameters):
     eqn = ode(statedot).set_integrator('vode')
     eqn.set_initial_value(initial_state, times[0]).set_f_params(parameters)
     state_array[0,:] = initial_state;
-    for index in range(1,size(times))
+    for index in range(1,np.size(times)):
         time = times[index]
         eqn.integrate(time)
         zarray[index,:] = eqn.y

@@ -15,7 +15,7 @@ initial_state = np.array([0,50])
 
 #Create Objects to Simulate
 the_turbine = Turbine(1, np.array([[0,0],[20,5],[40,4],[60,3],[80,2],[100,1]]))
-one_piston = Piston(self, .03, .3, .03, .25, 0)
+one_piston = Piston(the_pump, .03, .3, .03, .25, 0)
 the_pump = Pump(the_turbine, one_piston)
 
 states = sp.predict(the_pump.statedot, times, initial_state, [])
