@@ -17,11 +17,3 @@ def solve_ode(f, tarray, z0, p):
         eqn.integrate(time)
         zarray[idx,:] = eqn.y
     return zarray
-
-def delta_state(t, z, pump):
-    state = z
-    thetadot = omega
-    omegadot = pump.omegadot(state)
-    zdot = [thetadot, omega]
-    return zdot
-

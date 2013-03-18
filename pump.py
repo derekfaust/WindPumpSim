@@ -86,6 +86,12 @@ class Pump:
         omegadot = (pnet - b_de_m)/(c_omegadot_t+c_omegadot_m)
         return omegadot
 
+    def delta_state(t, state):
+        thetadot = state[1]
+        omegadot = pump.omegadot(state)
+        statedot = [thetadot, omegadot]
+        return statedot
+
 class Piston:
     state [0, 0]
     lastupdate = 0
