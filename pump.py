@@ -63,7 +63,9 @@ class Pump:
         return torque
 
     def net_power(self, state):
-        return drive.power(state) + mechanism.power(state)
+        bp = self.backpressure(mechanism.Q(state))
+        mech_power = mechanism.power(state, bp)
+        return drive.power(state) + mech_power
 
     def omegadot(self, state):
         pnet = self.netpower(state)
@@ -83,8 +85,7 @@ class Piston:
     state = [0, 0]
     mu = .5
     
-    def __init__(self, pump, r_crank, r_rod, r_piston, m_piston, theta):
-        self.masterpump = pump
+    def __init__(self, r_crank, r_rod, r_piston, m_piston, theta):
         self.r_c = r_crank
         self.r_r = r_rod
         self.m_p = m_piston
@@ -122,9 +123,8 @@ class Piston:
         coef = (self.r_c**2/denom+num/(denom**3)+self.r_c*cos(theta))
         return coef
     
-    def power(self, state):
-        v = self.xdot(self, state)
-        pumpingpower = masterpump.backpressure(self.area*v)
+    def power(self, state, backpressure):
+        pumpingpower = backpressure*self.area
         return pumpingpower
 
     def de_omegadot_coeff(self, state):
