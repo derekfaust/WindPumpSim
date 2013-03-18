@@ -10,10 +10,10 @@ import statepredictor as sp
 from pump import *
 
 #Simulation Parameters
-timespan = [0,2]
+timespan = [0,100]
 timesteps = 1000
 initial_theta= 0
-initial_omega= 20
+initial_omega= 10
 
 #Turbine Parameters
 turbine_I = 1

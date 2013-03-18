@@ -30,7 +30,6 @@ class Pump:
     tube_radius=.01
     tube_height=1
     rho_w=1000
-    vol_pumped=0
     max_pressure=rho_w*g*tube_height
     tube_area = tube_radius**2*pi
     state = [0,0]
@@ -39,9 +38,10 @@ class Pump:
         self.drive = drivesystem
         self.mechanism = mechanism    
     
-    def backpressure(self, Q):
+    def backpressure(self, state, Q):
+        vol_pumped = state[2]
         if Q > 0:
-            backpressure = max(self.max_pressure, self.rho_w*self.g*(self.vol_pumped/self.tube_area))
+            backpressure = min(self.max_pressure, self.rho_w*self.g*(vol_pumped/self.tube_area))           
             return backpressure
         else:
             return 0
@@ -54,7 +54,7 @@ class Pump:
         return torque
 
     def net_power(self, state):
-        bp = self.backpressure(self.mechanism.Q(state))
+        bp = self.backpressure(state, self.mechanism.Q(state))
         mech_power = self.mechanism.power(state, bp)
         return self.drive.power(state) - mech_power
 
