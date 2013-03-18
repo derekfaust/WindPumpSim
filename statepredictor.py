@@ -14,8 +14,6 @@ def predict(statedot, times, initial_state, parameters):
     state_array[0,:] = initial_state;
     for index in range(1,np.size(times)):
         time = times[index]
-        print time
         eqn.integrate(time)
         state_array[index,:] = eqn.y
-        print eqn.y
     return state_array

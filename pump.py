@@ -1,7 +1,6 @@
 #Import required modules
 from __future__ import division
 import numpy as np
-import pylab as plot
 from math import *
 
 class DummyTurbine:
@@ -51,7 +50,8 @@ class Pump:
     
     def backpressure(self, Q):
         if Q > 0:
-            return min(self.max_pressure, self.rho_w*self.g*(self.vol_pumped/self.tube_area))
+            backpressure = max(self.max_pressure, self.rho_w*self.g*(self.vol_pumped/self.tube_area))
+            return backpressure
         else:
             return 0
 
@@ -76,7 +76,6 @@ class Pump:
         return omegadot
 
     def statedot(self, t, state, p):
-        print state
         thetadot = state[1]
         omegadot = self.omegadot(state)
         statedot = [thetadot, omegadot]
@@ -125,7 +124,12 @@ class Piston:
         return coef
 
     def Q(self, state):
-        return self.xdot(state)*self.area
+        xd = self.xdot(state)
+        if xd > 0:
+            q = self.xdot(state)*self.area
+        else:
+            q = 0
+        return q
     
     def power(self, state, backpressure):
         pumpingpower = backpressure*self.area
