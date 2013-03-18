@@ -28,7 +28,7 @@ class Turbine:
 class Pump:
     g = 9.8
     tube_radius=.01
-    tube_height=1
+    tube_height=1.5
     rho_w=1000
     max_pressure=rho_w*g*tube_height
     tube_area = tube_radius**2*pi
@@ -55,7 +55,7 @@ class Pump:
 
     def net_power(self, state):
         bp = self.backpressure(state, self.mechanism.Q(state))
-        mech_power = self.mechanism.power(state, bp)
+        mech_power = self.mechanism.power(state, bp, self.drive.Tin(state[1]))
         return self.drive.power(state) - mech_power
 
     def omegadot(self, state):
@@ -124,9 +124,14 @@ class Piston:
             q = 0
         return q
     
-    def power(self, state, backpressure):
+    def power(self, state, backpressure, torque):
+        theta = state[0]+self.theta0
         pumpingpower = backpressure*self.area*self.xdot(state)
-        return pumpingpower
+        T_rod = torque/(self.r_c*sin(pi-theta-self.alpha(theta)))
+        power_lost_friction = abs(self.mu*T_rod*sin(theta)*self.xdot(state))
+        #power_lost_friction = 0
+        power_out = pumpingpower + power_lost_friction
+        return power_out
 
     def de_omegadot_coef(self, state):
         coef = self.mass*state[1]*self.xdotcoef(state[0])**2
