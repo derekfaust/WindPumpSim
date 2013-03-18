@@ -14,26 +14,24 @@ class DummyTurbine:
 
 
 class Turbine:
-    theta = 0
-    omega = 0
-    omegadot = 0
-    def __init__(self, I, performance, output):
+    def __init__(self, I, performance):
         self.I = I
-        self.omega = performance[:,1]
-        self.torque = performance[:,2]
-        self.output = output
+        self.omega = performance[:,0]
+        self.torque = performance[:,1]
+    
     def Tin(self, omega):
         return np.interp(omega, self.TorqueCurve[:,0], self.TorqueCurve[:,1])
-    #Pump is in control, no need to get pump torque.
-    def Tout(self, time):
-        return output.get_torque(time)
+
     def set_state(self, state):
         [theta, omega, omegadot] = state
         return true
+    
     def get_state(self):
         return [theta, omega, omegadot]
+    
     def power(self, state):
         return state[1]*self.Tin(state[1])
+    
     def de_omegadot_coef(self, state):
         return self.I*state[1]
 
@@ -47,9 +45,9 @@ class Pump:
     tube_area = tube_radius**2*math.pi
     state = [0,0,0]
     
-    def __init__(self, drivesystem):
+    def __init__(self, drivesystem, mechanism):
         self.drive = drivesystem
-        mechanism = Piston(self, .03, .3, .03, .25, 0)
+        self.mechanism = mechanism    
     
     def backpressure(self, Q):
         if Q > 0:
@@ -59,17 +57,6 @@ class Pump:
 
     def get_state(self):
         return state
-    
-    #DO NOT USE
-    #State-based, not time-based, for now.
-    def make_state(self, time):
-        if lastupdate == time:
-            return false
-        else
-            [self.theta, self.omega, self.omegadot] = self.drive.get_state()
-            self.theta += self.theta0
-            self.lastupdate = time
-            return true
 
     def get_torque(self, state):
         torque = mechanism.get_torque(state)
@@ -86,9 +73,9 @@ class Pump:
         omegadot = (pnet - b_de_m)/(c_omegadot_t+c_omegadot_m)
         return omegadot
 
-    def delta_state(t, state):
+    def statedot(t, state):
         thetadot = state[1]
-        omegadot = pump.omegadot(state)
+        omegadot = self.omegadot(state)
         statedot = [thetadot, omegadot]
         return statedot
 
@@ -104,24 +91,7 @@ class Piston:
         self.m_p = m_piston
         self.area = r_piston**2*pi
         self.theta0 = theta
-        #make_state()
     
-    #DO NOT USE
-    #State-based, not time-based, for now.
-    def make_state(self, time)
-        if lastupdate == time:
-            return false
-        else
-            [self.theta, self.omega, self.omegadot] = self.masterpump.get_state()
-            self.theta += self.theta0
-            self.alpha = asin(self.r_c/self.r_r*sin(theta))
-            self.xpos = xpos(self, theta, omega, omegadot)
-            self.xdot = xdot(self, theta, omega, omegadot)
-            #Incalculable
-            #self.xddot = xddot(self, theta, omega, omegadot)
-            self.lastupdate = time
-            return true
-
     def alpha(self, theta):
         return asin(self.r_c/self.r_r*sin(theta))
 
@@ -153,17 +123,6 @@ class Piston:
         denom = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
         coef = (self.r_c**2/denom+num/(denom**3)+self.r_c*cos(theta))
     
-    #BROKEN
-    def get_torque(self, time):
-        make_state(time)
-        Q = self.area*self.xdot
-        P = masterpump.get_pressure(Q)
-        #xddot is incalculable
-        F_rod = (self.m_p*self.xddot + P*self.area)/(
-                cos(self.alpha)+self.mu*sin(self.alpha)*(self.xdot/abs(self.xdot)))
-        torque = -F_rod*self.r_c*sin(pi-self.alpha-self.theta)
-        return torque
-
     def power(self, state):
         x = self.xpos(self, state)
         v = self.xdot(self, state)
