@@ -32,6 +32,8 @@ class Turbine:
         return true
     def get_state(self,time)
         return [theta, omega, omegadot]
+    def power(self, state):
+        return state[1]*self.Tin(state[1])
 
 class Pump:
     g = 9.8
@@ -47,7 +49,7 @@ class Pump:
     def __init__(self, drivesystem):
         self.drive = drivesystem
         mechanism = Piston(self, .03, .3, .03, .25, 0)
-    def get_pressure(self, Q, Qdot):
+    def backpressure(self, Q):
         if Q > 0:
             return min(self.max_pressure, self.rho_w*self.g*(self.vol_pumped/self.tube_area)
         else
@@ -66,6 +68,8 @@ class Pump:
         make_state(time)
         torque = mechanism.get_torque(time)
         return torque
+    def net_power(self, state):
+        return drive.power(state) + mechanism.power(state)
 
 class Piston:
     theta = 0
@@ -112,7 +116,8 @@ class Piston:
         xdot = omega*(comp1-comp2)
         return xdot
     
-    def xddot(self, theta, omega, omegadot):
+    #BROKEN
+    def xddot(self, theta, omega, omegadot):    #OmegaDot is unknown
         denom = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
         comp1 = self.r_c*sin(theta)
         comp2 = self.r_c**2*sin(theta)*cos(theta)
@@ -121,13 +126,21 @@ class Piston:
         omega_term = omega**2*(self.r_c/denom+num/denom**3+self.r_c*cos(theta))
         xddot = omegadot_term + omega_term    
         return xddot
-
+    
+    #BROKEN
     def get_torque(self, time):
         make_state(time)
         Q = self.area*self.xdot
-        Qdot = self.area*self.xddot
-        P = masterpump.get_pressure(Q,Qdot)
+        P = masterpump.get_pressure(Q)
+        #xddot is incalculable
         F_rod = (self.m_p*self.xddot + P*self.area)/(
                 cos(self.alpha)+self.mu*sin(self.alpha)*(self.xdot/abs(self.xdot)))
         torque = -F_rod*self.r_c*sin(pi-self.alpha-self.theta)
         return torque
+
+    def power(self, state)
+        x = self.xpos(self, state)
+        v = self.xdot(self, state)
+        pumpingpower = masterpump.backpressure(self.area*v)
+        return pumpingpower
+
