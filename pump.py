@@ -95,13 +95,13 @@ class Piston:
         theta = state[0]+self.theta0
         comp1 = self.r_c*cos(theta)
         comp2 = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
-        xpos = comp1+comp2
+        xpos = -comp1+comp2
         return xpos
 
     def xdot(self, state):
         theta = state[0]+self.theta0
         omega = state[1]
-        xdot = omega*self.xdotcoef(theta)
+        xdot = -omega*self.xdotcoef(theta)
         return xdot
     
     def xdotcoef(self, theta):
@@ -140,7 +140,7 @@ class Piston:
         return coef
 
     def de_offset(self, state):
-        theta = state[0]+theta0
+        theta = state[0]+self.theta0
         omega = state[1]
         offset = self.mass*omega**3*self.xdotcoef(theta)*self.xddotcoef(theta)
         return offset
