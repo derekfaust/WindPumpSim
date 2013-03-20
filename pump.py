@@ -4,81 +4,97 @@ import numpy as np
 from math import *
 
 class Turbine:
+    #Turbine object for pump simulation
     def __init__(self, I, performance):
+        #Initialize Turbine object with provided specifications
         self.I = I
         self.omega = performance[:,0]
         self.torque = performance[:,1]
     
     def Tin(self, omega):
+        #Determine the torque provided by the wind
         return np.interp(omega, self.omega, self.torque)
-
-    def set_state(self, state):
-        [theta, omega, omegadot] = state
-        return true
-    
-    def get_state(self):
-        return [theta, omega, omegadot]
     
     def power(self, state):
-        return state[1]*self.Tin(state[1])
+        #Determine the power
+        omega = state[1]
+        return omega*self.Tin(omega)
     
     def de_omegadot_coef(self, state):
-        return self.I*state[1]
+        #Determine angular acceleration coefficient for dE/dt expression
+        omega = state[1]
+        return self.I*omega
 
 class Pump:
-    g = 9.8
-    tube_radius=.01
-    tube_height=1.5
-    rho_w=1000
-    max_pressure=rho_w*g*tube_height
-    tube_area = tube_radius**2*pi
-    state = [0,0]
+    #Pump object for pump simulation
+    
+    #Universal pump parameters
+    g = 9.8             #Gravity acceleration
+    tube_radius=.01     #Radius of the tube
+    tube_height=1.5     #Height of water column to overcome
+    rho_w=1000          #Density of water [kg/m^3]
+    max_pressure=rho_w*g*tube_height    #Maximum pressure due to water column
+    tube_area = tube_radius**2*pi       #Cross-sectional area of tube
     
     def __init__(self, drivesystem, mechanism):
-        self.drive = drivesystem
-        self.mechanism = mechanism    
+        #Initialize pump object with known drive and mechanisms
+        self.drive = drivesystem    #Drive system, such as turbine
+        self.mechanism = mechanism  #Mechanism for converting rotation to flow
     
     def backpressure(self, state, Q):
-        vol_pumped = state[2]
-        if Q > 0:
-            backpressure = min(self.max_pressure, self.rho_w*self.g*(vol_pumped/self.tube_area))           
-            return backpressure
-        else:
-            return 0
-
-    def get_state(self):
-        return self.state
-
-    def get_torque(self, state):
-        torque = self.mechanism.get_torque(state)
-        return torque
+        #Calculate the backpressure that must be provided by the mechanism
+        vol_pumped = state[2]   #Get volume pumped from state
+        #Backpressure is the maximum, or due to column height
+        backpressure = min(self.max_pressure,
+                           self.rho_w*self.g*(vol_pumped/self.tube_area))           
+        return backpressure
 
     def net_power(self, state):
+        #Calculate the net power into the system
+        #Find the backpressure
         bp = self.backpressure(state, self.mechanism.Q(state))
+        #Find the power leaving the system at the mechanism
         mech_power = self.mechanism.power(state, bp, self.drive.Tin(state[1]))
-        return self.drive.power(state) - mech_power
+        #Net power is power entering the system minus power leaving        
+        pnet = self.drive.power(state) - mech_power        
+        return pnet
 
     def omegadot(self, state):
+        #Calculate the change in angular velocity (which drives the state
+        #change of the entire system)
+        #Determine the net power
         pnet = self.net_power(state)
+        #Determine the omegadot coefficients in the
+        #change in kinetic energy expression
         c_omegadot_t = self.drive.de_omegadot_coef(state)
         c_omegadot_m = self.mechanism.de_omegadot_coef(state)
+        #Determine the component of the change in kinetic
+        #energy of the mechanism independent of omegadot
         b_de_m = self.mechanism.de_offset(state)
+        #Calculate omegadot given power, offsets, and coefficients
+        #(See equation write-up for details on theory)
         omegadot = (pnet - b_de_m)/(c_omegadot_t+c_omegadot_m)
         return omegadot
 
     def statedot(self, t, state, p):
+        #Determine the change in state of the system (differential equation)
+        #The state variable is in the following form:
         #state = [theta, omega, vol]
-        thetadot = state[1]
-        omegadot = self.omegadot(state)
-        voldot = self.mechanism.Q(state)
+        thetadot = state[1]                 #Change in theta is omega
+        omegadot = self.omegadot(state)     #Change in omega is omegadot
+        voldot = self.mechanism.Q(state)    #Change in volume pumped is flow
+        #Assemble statedot variable for numerical integrator
         statedot = [thetadot, omegadot, voldot]
         return statedot
 
 class Piston:
-    state = [0, 0]
+    #Piston mechanism for pump simulations
+    
+    #General piston parameters
     mu = .5
     
     def __init__(self, r_crank, r_rod, r_piston, m_piston, theta):
+        #Initialize piston mechanism with 
         self.r_c = r_crank
         self.r_r = r_rod
         self.mass = m_piston
@@ -86,61 +102,76 @@ class Piston:
         self.theta0 = theta
     
     def alpha(self, theta):
+        #Determine the angle of the pushrod with respect to the piston access
         return asin(self.r_c/self.r_r*sin(theta))
 
-    def xstate(self, state):
-        return [xpos(state), xdot(state)]
-
     def xpos(self, state):
-        theta = state[0]+self.theta0
-        comp1 = self.r_c*cos(theta)
-        comp2 = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
-        xpos = -comp1+comp2
+        #Calculate the position of the piston
+        theta = state[0]+self.theta0    #Include initial theta offset
+        comp1 = self.r_c*cos(theta)     #First term   
+        comp2 = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2) #Second Term
+        xpos = -comp1+comp2             #Sum the terms
         return xpos
 
     def xdot(self, state):
-        theta = state[0]+self.theta0
-        omega = state[1]
-        xdot = -omega*self.xdotcoef(theta)
+        #Calculate the velocity of the piston
+        theta = state[0]+self.theta0    #Include the initial theta offset
+        omega = state[1]                #Pull omega from state
+        xdot = -omega*self.xdotcoef(theta)  #Calculate velocity
         return xdot
     
     def xdotcoef(self, theta):
+        #Calculate the coefficient for the velocity calculation.
+        #Used to split up and simplify the calculation
         comp1 = self.r_c*sin(theta)
         denom = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
         comp2 = (self.r_c**2*sin(theta)*cos(theta))/denom
         return comp1-comp2
 
     def xddotcoef(self, theta):
+        #Calculate the coefficient for the acceleration calculation.
+        #Used to split up and simplify the calculation
         num = (self.r_c**2*cos(theta)*sin(theta))**2
         denom = self.r_r*sqrt(1-(self.r_c/self.r_r*sin(theta))**2)
         coef = (self.r_c**2/denom+num/(denom**3)+self.r_c*cos(theta))
         return coef
 
     def Q(self, state):
-        xd = self.xdot(state)
+        #Calculate the flow rate of the piston
+        xd = self.xdot(state)   #Get velocity
         if xd > 0:
-            q = self.xdot(state)*self.area
+            #If piston velocity is positive, flow rate is velocity*area
+            q = xd*self.area
         else:
+            #If velocity of piston is negative or zero, there is no flow
             q = 0
         return q
     
     def power(self, state, backpressure, torque):
-        theta = state[0]+self.theta0
+        #Calculate the power leaving the system at the piston
+        theta = state[0]+self.theta0    #Include initial theta offset
+        #Power used to pump water is pressure times area times velocity
         pumpingpower = backpressure*self.area*self.xdot(state)
+        #Calcuate tension in the rod for friction calculation
         T_rod = torque/(self.r_c*sin(pi-theta-self.alpha(theta)))
+        #Calcuate power lost to friction
         power_lost_friction = abs(self.mu*T_rod*sin(theta)*self.xdot(state))
-        power_lost_friction = 0
+        #Power leaving the system is the sum of lost powers
         power_out = pumpingpower + power_lost_friction
         return power_out
 
     def de_omegadot_coef(self, state):
-        theta = state[0]+self.theta0
-        omega = state[1]
+        #Determine angular acceleration coefficient for dE/dt expression
+        theta = state[0]+self.theta0    #Include initial theta offset
+        omega = state[1]                #Pull anglar velocity
+        #Calculate the coefficient
         coef = self.mass*omega*self.xdotcoef(theta)**2
         return coef
 
     def de_offset(self, state):
-        theta = state[0]+self.theta0
-        omega = state[1]
+        #Determine angular acceleration offset for dE/dt expression
+        theta = state[0]+self.theta0    #Include initial theta offset
+        omega = state[1]                #Pull angular velocity
+        #Calculate the coefficient
         offset = self.mass*omega**3*self.xdotcoef(theta)*self.xddotcoef(theta)
         return offset
