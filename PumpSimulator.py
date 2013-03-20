@@ -52,7 +52,7 @@ def waterpumped(r_crank, r_rod, r_piston):
     the_turbine = Turbine(turbine_I, omega_torque_curve)
     one_piston = Piston(crank_radius, rod_length, piston_radius, piston_mass,
                         initial_piston_angle)
-    the_pump = Pump(the_turbine, one_piston)
+    the_pump = Pump(the_turbine, [one_piston])
     
     #Run the state prediction to get an array of states at requested times.
     states = sp.predict(the_pump.statedot, times, initial_state, [])

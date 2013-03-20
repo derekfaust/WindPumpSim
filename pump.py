@@ -36,10 +36,10 @@ class Pump:
     max_pressure=rho_w*g*tube_height    #Maximum pressure due to water column
     tube_area = tube_radius**2*pi       #Cross-sectional area of tube
     
-    def __init__(self, drivesystem, mechanism):
+    def __init__(self, drivesystem, mechanisms):
         #Initialize pump object with known drive and mechanisms
-        self.drive = drivesystem    #Drive system, such as turbine
-        self.mechanism = mechanism  #Mechanism for converting rotation to flow
+        self.drive = drivesystem        #Drive system, such as turbine
+        self.mechanisms = mechanisms    #Mechanism for converting rotation to flow
     
     def backpressure(self, state, Q):
         #Calculate the backpressure that must be provided by the mechanism
@@ -51,10 +51,13 @@ class Pump:
 
     def net_power(self, state):
         #Calculate the net power into the system
-        #Find the backpressure
-        bp = self.backpressure(state, self.mechanism.Q(state))
-        #Find the power leaving the system at the mechanism
-        mech_power = self.mechanism.power(state, bp, self.drive.Tin(state[1]))
+        mech_power = 0
+        for mechanism in self.mechanisms:
+            #Find the backpressure
+            bp = self.backpressure(state, mechanism.Q(state))
+            #Find the power leaving the system at the mechanisms
+            mech_power += mechanism.power(state, bp,
+                                               self.drive.Tin(state[1]))
         #Net power is power entering the system minus power leaving        
         pnet = self.drive.power(state) - mech_power        
         return pnet
@@ -67,10 +70,14 @@ class Pump:
         #Determine the omegadot coefficients in the
         #change in kinetic energy expression
         c_omegadot_t = self.drive.de_omegadot_coef(state)
-        c_omegadot_m = self.mechanism.de_omegadot_coef(state)
+        c_omegadot_m = 0
+        for mechanism in self.mechanisms:
+            c_omegadot_m += mechanism.de_omegadot_coef(state)
         #Determine the component of the change in kinetic
         #energy of the mechanism independent of omegadot
-        b_de_m = self.mechanism.de_offset(state)
+        b_de_m = 0        
+        for mechanism in self.mechanisms:
+            b_de_m += mechanism.de_offset(state)
         #Calculate omegadot given power, offsets, and coefficients
         #(See equation write-up for details on theory)
         omegadot = (pnet - b_de_m)/(c_omegadot_t+c_omegadot_m)
@@ -82,7 +89,9 @@ class Pump:
         #state = [theta, omega, vol]
         thetadot = state[1]                 #Change in theta is omega
         omegadot = self.omegadot(state)     #Change in omega is omegadot
-        voldot = self.mechanism.Q(state)    #Change in volume pumped is flow
+        voldot = 0
+        for mechanism in self.mechanisms:
+            voldot += mechanism.Q(state)    #Change in volume pumped is flow
         #Assemble statedot variable for numerical integrator
         statedot = [thetadot, omegadot, voldot]
         return statedot
