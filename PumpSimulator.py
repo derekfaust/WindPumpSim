@@ -13,8 +13,8 @@ from pump import *              #Pump components
 #Function ready for optimization
 def waterpumped(r_crank, phase_offset):
     #Simulation Parameters
-    timespan = [0,10]   #Beginning and ending times
-    timesteps = 1000    #Number of timesteps
+    timespan = [0,2]   #Beginning and ending times
+    timesteps = 5000    #Number of timesteps
     initial_theta= 0    #Initial angle of turbine and pump
     initial_omega= 10  #Set the initial speed. Zero yeilds no torque
     
@@ -70,12 +70,14 @@ def waterpumped(r_crank, phase_offset):
     #Plot the angular velocity and water pumped vs time
     fig = plot.figure(1)
     plot.subplot('211')
-    plot.plot(times, states[:,1], 'k')
+    plot.plot(times, states[:,1], 'k', times,
+              omega_torque_curve[2,0]*np.ones(np.size(times)), 'r',
+              times, omega_torque_curve[-2,0]*np.ones(np.size(times)), 'b')
     plot.xlabel('Time (s)')
     plot.ylabel('Omega (rad/s)')
     plot.title('Pump')
     plot.subplot('212')
-    plot.plot(times, states[:,2]*1000, 'k')
+    plot.plot(times, states[:,2]*1000, 'k', times, times/60, 'g')
     plot.xlabel('Time (s)')
     plot.ylabel('Volume Pumped (L)')
     plot.title('Pump')
@@ -88,4 +90,4 @@ def waterpumped(r_crank, phase_offset):
 #If this file is executed, do this:
 if __name__ == '__main__':
     #Find the amount of water pumped at a given time.
-    print waterpumped(.03, 0)
+    print waterpumped(.15, 0)
