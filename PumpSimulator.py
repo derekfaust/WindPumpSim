@@ -11,7 +11,7 @@ import statepredictor as sp     #Numerical Solution Interface
 from pump import *              #Pump components
 
 #Function ready for optimization
-def waterpumped(r_crank, r_rod, r_piston):
+def waterpumped(r_crank, phase_offset):
     #Simulation Parameters
     timespan = [0,10]   #Beginning and ending times
     timesteps = 1000    #Number of timesteps
@@ -47,9 +47,9 @@ def waterpumped(r_crank, r_rod, r_piston):
     
     #Piston Parameters
     crank_radius = r_crank
-    rod_length = r_rod
-    piston_radius = r_piston
-    piston_mass = .2
+    rod_length = .254           #10 inches, Should be as long as will fit.
+    piston_radius = .022        #.875in to meters.
+    piston_mass = .1            #Estimated from volume and PVC density.
     initial_piston_angle = 0
     
     #Initial Conditions
@@ -61,7 +61,7 @@ def waterpumped(r_crank, r_rod, r_piston):
     one_piston = Piston(crank_radius, rod_length, piston_radius, piston_mass,
                         initial_piston_angle)
     two_piston = Piston(crank_radius, rod_length, piston_radius, piston_mass,
-                        initial_piston_angle+pi)
+                        initial_piston_angle+phase_offset)
     the_pump = Pump(the_turbine, [one_piston, two_piston])
     
     #Run the state prediction to get an array of states at requested times.
@@ -88,4 +88,4 @@ def waterpumped(r_crank, r_rod, r_piston):
 #If this file is executed, do this:
 if __name__ == '__main__':
     #Find the amount of water pumped at a given time.
-    print waterpumped(.03, .3, .04)
+    print waterpumped(.03, 0)
