@@ -16,7 +16,7 @@ def waterpumped(r_crank, r_rod, r_piston):
     timespan = [0,10]   #Beginning and ending times
     timesteps = 1000    #Number of timesteps
     initial_theta= 0    #Initial angle of turbine and pump
-    initial_omega= 8.1  #Set the initial speed. Zero yeilds no torque
+    initial_omega= 10  #Set the initial speed. Zero yeilds no torque
     
     #Turbine Parameters
     turbine_I = .1          #Turbine moment of inertia
@@ -26,13 +26,21 @@ def waterpumped(r_crank, r_rod, r_piston):
     gear_ratio = out_sprocket_teeth/in_sprocket_teeth
     #Measured torque curve [rad/s, Nm] from turbine
     omega_torque_curve = np.array([[0,  0],
-                                   [42-float_info.epsilon, 0],
-                                   [42, 1.28],
-                                   [63, .64],
-                                   [83, .32],
-                                   [104, .16],
-                                   [125, .08],
-                                   [146, 0]])
+                                   [56.55-float_info.epsilon, 0],
+                                   [56.55, 1.01],
+                                   [63.36, .94],
+                                   [75.40, .79],
+                                   [81.68, .72],
+                                   [86.39, .65],
+                                   [90.06, .58],
+                                   [92.89, .51], 
+                                   [99.48, .43],
+                                   [103.67, .36],
+                                   [107.23, .29],
+                                   [110.48, .22],
+                                   [114.25, .14],
+                                   [122.00, .07],
+                                   [122.00+float_info.epsilon, 0]])
     #Modify torque curve to convert to torque and omega at pump input
     omega_torque_curve[:,0] = omega_torque_curve[:,0]/gear_ratio
     omega_torque_curve[:,1] = omega_torque_curve[:,1]*gear_ratio
@@ -41,7 +49,7 @@ def waterpumped(r_crank, r_rod, r_piston):
     crank_radius = r_crank
     rod_length = r_rod
     piston_radius = r_piston
-    piston_mass = .1
+    piston_mass = .2
     initial_piston_angle = 0
     
     #Initial Conditions
@@ -52,7 +60,9 @@ def waterpumped(r_crank, r_rod, r_piston):
     the_turbine = Turbine(turbine_I, omega_torque_curve)
     one_piston = Piston(crank_radius, rod_length, piston_radius, piston_mass,
                         initial_piston_angle)
-    the_pump = Pump(the_turbine, [one_piston])
+    two_piston = Piston(crank_radius, rod_length, piston_radius, piston_mass,
+                        initial_piston_angle+pi)
+    the_pump = Pump(the_turbine, [one_piston, two_piston])
     
     #Run the state prediction to get an array of states at requested times.
     states = sp.predict(the_pump.statedot, times, initial_state, [])
@@ -78,4 +88,4 @@ def waterpumped(r_crank, r_rod, r_piston):
 #If this file is executed, do this:
 if __name__ == '__main__':
     #Find the amount of water pumped at a given time.
-    print waterpumped(.03, .3, .08)
+    print waterpumped(.03, .3, .04)

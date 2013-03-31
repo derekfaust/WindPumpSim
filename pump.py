@@ -13,7 +13,8 @@ class Turbine:
     
     def Tin(self, omega):
         #Determine the torque provided by the wind
-        return np.interp(omega, self.omega, self.torque)
+        Tin = np.interp(omega, self.omega, self.torque)
+        return Tin
     
     def power(self, state):
         #Determine the power
@@ -59,7 +60,7 @@ class Pump:
             mech_power += mechanism.power(state, bp,
                                                self.drive.Tin(state[1]))
         #Net power is power entering the system minus power leaving        
-        pnet = self.drive.power(state) - mech_power        
+        pnet = self.drive.power(state) - mech_power      
         return pnet
 
     def omegadot(self, state):
@@ -81,6 +82,7 @@ class Pump:
         #Calculate omegadot given power, offsets, and coefficients
         #(See equation write-up for details on theory)
         omegadot = (pnet - b_de_m)/(c_omegadot_t+c_omegadot_m)
+        #print pnet - b_de_m, state[1]
         return omegadot
 
     def statedot(self, t, state, p):
