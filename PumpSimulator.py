@@ -13,13 +13,13 @@ from pump import *              #Pump components
 #Function ready for optimization
 def waterpumped(r_crank, phase_offset):
     #Simulation Parameters
-    timespan = [0,2]   #Beginning and ending times
+    timespan = [0,8]   #Beginning and ending times
     timesteps = 5000    #Number of timesteps
     initial_theta= 0    #Initial angle of turbine and pump
-    initial_omega= 10  #Set the initial speed. Zero yeilds no torque
+    initial_omega= 15  #Set the initial speed. Zero yeilds no torque
     
     #Turbine Parameters
-    turbine_I = .1          #Turbine moment of inertia
+    turbine_I = 2           #Turbine moment of inertia
     in_sprocket_teeth = 9   #Number of teeth on input sprocket
     out_sprocket_teeth = 70 #Number of teeth on output sprocket
     #Ratio of output torque to input torque
@@ -90,4 +90,4 @@ def waterpumped(r_crank, phase_offset):
 #If this file is executed, do this:
 if __name__ == '__main__':
     #Find the amount of water pumped at a given time.
-    print waterpumped(.15, 0)
+    print waterpumped(.12, 0)
