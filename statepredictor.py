@@ -11,7 +11,7 @@ def predict(statedot, times, initial_state, parameters):
     #Initialize the state array to save to
     state_array = np.zeros((np.size(times), np.size(initial_state)))
     #Create ODE object
-    eqn = ode(statedot).set_integrator('vode')
+    eqn = ode(statedot).set_integrator('dopri5')
     #Set up the ODE for integration
     eqn.set_initial_value(initial_state, times[0]).set_f_params(parameters)
     #Initialize the first value in the state array
