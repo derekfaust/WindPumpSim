@@ -30,13 +30,15 @@ class Pump:
     #Pump object for pump simulation
     
     #Universal pump parameters
-    g = 9.8             #Gravity acceleration
-    tube_radius=.01     #Radius of the tube
-    tube_height=1.5     #Height of water column to overcome
-    rho_w=1000          #Density of water [kg/m^3]
-    max_pressure=rho_w*g*tube_height    #Maximum pressure due to water column
+    g = 9.8                 #Gravity acceleration (m/s^2)
+    tube_radius=.01         #Radius of the tube (m)
+    tube_height=1.5         #Height of water column to overcome (m)
+    tube_length=2           #Tube length (m)
+    rho_w=1000              #Density of water [kg/m^3]
+    friction_factor = .019  #Darcy friction factor
     tube_area = tube_radius**2*pi       #Cross-sectional area of tube
-    
+    max_pressure = rho_w*g*tube_height  #Maximum pressure due to gravity
+
     def __init__(self, drivesystem, mechanisms):
         #Initialize pump object with known drive and mechanisms
         self.drive = drivesystem        #Drive system, such as turbine
@@ -46,9 +48,10 @@ class Pump:
         #Calculate the backpressure that must be provided by the mechanism
         vol_pumped = state[2]   #Get volume pumped from state
         #Backpressure is the maximum, or due to column height
-        backpressure = min(self.max_pressure,
-                           self.rho_w*self.g*(vol_pumped/self.tube_area))           
-        return backpressure
+        head_loss = self.friction_factor*(self.tube_length/(2*self.tube_radius))*(self.rho_w*(Q/tube_area)**2/2)
+        backpressure = min(self.rho_w*self.g*(vol_pumped/self.tube_area), self.max_pressure)
+        pressure = head_loss+backpressure
+        return pressure
 
     def net_power(self, state):
         #Calculate the net power into the system
