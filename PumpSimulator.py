@@ -13,17 +13,17 @@ from pump import *                  #Pump components
 
 #Function ready for optimization
 def waterpumped(x):
-    r_crank = x[0]
-    phase_offset = x[1]
-    print 'Optimized with crank radius ' + str(r_crank) + ' and phase offset ' + str(phase_offset)
+    crank_radius = x[0]
+    rod_length = x[1] 
+    print 'Calculating with crank radius ' + str(crank_radius) + ' and rod length' + str(rod_length)
     #Simulation Parameters
     timespan = [0,20]   #Beginning and ending times
     timesteps = 1000    #Number of timesteps
     initial_theta= 0    #Initial angle of turbine and pump
-    initial_omega= 8  #Set the initial speed. Zero yeilds no torque
+    initial_omega= 8    #Set the initial speed. Zero yeilds no torque
     
     #Turbine Parameters
-    turbine_I = 2           #Turbine moment of inertia
+    turbine_I = 2.5         #Turbine moment of inertia
     in_sprocket_teeth = 9   #Number of teeth on input sprocket
     out_sprocket_teeth = 70 #Number of teeth on output sprocket
     #Ratio of output torque to input torque
@@ -50,55 +50,49 @@ def waterpumped(x):
     omega_torque_curve[:,1] = omega_torque_curve[:,1]*gear_ratio
     
     #Piston Parameters
-    crank_radius = r_crank
-    rod_length = .254           #10 inches, Should be as long as will fit.
-    piston_radius = .022        #.875in to meters.
+    piston_radius = .022        #.9in to meters.
     piston_mass = .1            #Estimated from volume and PVC density.
     initial_piston_angle = 0
+    phase_offset = pi
 
-    #Check for invalid parameters
-    if (phase_offset < 0 or phase_offset > 2*pi) or (r_crank >= rod_length or r_crank <= 0):
-        return 0
-    else:
-        #Initial Conditions
-        times = np.linspace(timespan[0],timespan[1],timesteps)
-        initial_state = np.array([initial_theta,initial_omega, 0])
-        
-        #Create Objects (from pump module) to Simulate
-        the_turbine = Turbine(turbine_I, omega_torque_curve)
-        one_piston = Piston(crank_radius, rod_length, piston_radius, piston_mass,
-                            initial_piston_angle)
-        two_piston = Piston(crank_radius, rod_length, piston_radius, piston_mass,
-                            initial_piston_angle+phase_offset)
-        the_pump = Pump(the_turbine, [one_piston, two_piston])
-        
-        #Run the state prediction to get an array of states at requested times.
-        states = sp.predict(the_pump.statedot, times, initial_state, [])
-        
-        #Plot the angular velocity and water pumped vs time
-        #fig = plot.figure(1)
-        #plot.subplot('211')
-        #plot.plot(times, states[:,1], 'k', times,
-        #          omega_torque_curve[2,0]*np.ones(np.size(times)), 'r',
-        #          times, omega_torque_curve[-2,0]*np.ones(np.size(times)), 'b')
-        #plot.xlabel('Time (s)')
-        #plot.ylabel('Omega (rad/s)')
-        #plot.title('Pump')
-        #plot.subplot('212')
-        #plot.plot(times, states[:,2]*1000, 'k', times, times/60, 'g')
-        #plot.xlabel('Time (s)')
-        #plot.ylabel('Volume Pumped (L)')
-        #plot.title('Pump')
-        #fig.tight_layout()
-        #plot.show()
-        
-        #Return the amount of water pumped
-        return -states[-1,2]
+    #Initial Conditions
+    times = np.linspace(timespan[0],timespan[1],timesteps)
+    initial_state = np.array([initial_theta,initial_omega, 0])
+    
+    #Create Objects (from pump module) to Simulate
+    the_turbine = Turbine(turbine_I, omega_torque_curve)
+    one_piston = Piston(crank_radius, rod_length, piston_radius, piston_mass,
+                        initial_piston_angle)
+    two_piston = Piston(crank_radius, rod_length, piston_radius, piston_mass,
+                        initial_piston_angle+phase_offset)
+    the_pump = Pump(the_turbine, [one_piston, two_piston])
+    
+    #Run the state prediction to get an array of states at requested times.
+    states = sp.predict(the_pump.statedot, times, initial_state, [])
+    
+    #Plot the angular velocity and water pumped vs time
+    fig = plot.figure(1)
+    plot.subplot('211')
+    plot.plot(times, states[:,1], 'k', times,
+                omega_torque_curve[2,0]*np.ones(np.size(times)), 'r',
+                times, omega_torque_curve[-2,0]*np.ones(np.size(times)), 'b')
+    plot.xlabel('Time (s)')
+    plot.ylabel('Omega (rad/s)')
+    plot.title('Pump')
+    plot.subplot('212')
+    plot.plot(times, states[:,2]*1000, 'k', times, times/60, 'g')
+    plot.xlabel('Time (s)')
+    plot.ylabel('Volume Pumped (L)')
+    plot.title('Pump')
+    fig.tight_layout()
+    plot.show()
+    
+    #Return the amount of water pumped
+    return states[-1,2]
 
 #If this file is executed, do this:
 if __name__ == '__main__':
     #Find the amount of water pumped at a given time.
-   #for r in np.linspace(.1,.2,10):
-   #    print waterpumped((r, pi))
-    res = minimize(waterpumped, (.15, pi), method='BFGS', options={'disp': True})
-    print res
+    total_length = 10*.0254
+    for r in np.linspace(.01,.05,10):
+        print waterpumped((r , total_length-2*r))

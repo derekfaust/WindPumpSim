@@ -48,7 +48,7 @@ class Pump:
         #Calculate the backpressure that must be provided by the mechanism
         vol_pumped = state[2]   #Get volume pumped from state
         #Backpressure is the maximum, or due to column height
-        head_loss = self.friction_factor*(self.tube_length/(2*self.tube_radius))*(self.rho_w*(Q/tube_area)**2/2)
+        head_loss = self.friction_factor*(self.tube_length/(2*self.tube_radius))*(self.rho_w*(Q/self.tube_area)**2/2)
         backpressure = min(self.rho_w*self.g*(vol_pumped/self.tube_area), self.max_pressure)
         pressure = head_loss+backpressure
         return pressure
@@ -168,7 +168,7 @@ class Piston:
         pumpingpower = backpressure*self.area*self.xdot(state)
         #Calcuate tension in the rod for friction calculation
         T_rod = torque/(self.r_c*sin(pi-theta-self.alpha(theta)))
-        #Calcuate power lost to friction
+        #Calculate power lost to friction
         power_lost_friction = abs(self.mu*T_rod*sin(theta)*self.xdot(state))
         #Power leaving the system is the sum of lost powers
         power_out = pumpingpower + power_lost_friction
