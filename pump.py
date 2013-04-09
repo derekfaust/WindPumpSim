@@ -34,8 +34,9 @@ class Pump:
     tube_radius=.01         #Radius of the tube (m)
     tube_height=1.5         #Height of water column to overcome (m)
     tube_length=2           #Tube length (m)
+    in_tube_length = .5     #
     rho_w=1000              #Density of water [kg/m^3]
-    friction_factor = .019  #Darcy friction factor
+    friction_factor = .026  #Darcy friction factor
     tube_area = tube_radius**2*pi       #Cross-sectional area of tube
     max_pressure = rho_w*g*tube_height  #Maximum pressure due to gravity
 
@@ -47,9 +48,13 @@ class Pump:
     def backpressure(self, state, Q):
         #Calculate the backpressure that must be provided by the mechanism
         vol_pumped = state[2]   #Get volume pumped from state
-        #Backpressure is the maximum, or due to column height
-        head_loss = self.friction_factor*(self.tube_length/(2*self.tube_radius))*(self.rho_w*(Q/self.tube_area)**2/2)
-        backpressure = min(self.rho_w*self.g*(vol_pumped/self.tube_area), self.max_pressure)
+        if Q > 0:
+            #Backpressure is the maximum, or due to column height
+            head_loss = self.friction_factor*(self.tube_length/(2*self.tube_radius))*(self.rho_w*(Q/self.tube_area)**2/2)
+            backpressure = min(self.rho_w*self.g*(vol_pumped/self.tube_area), self.max_pressure)
+        else:
+            head_loss = self.friction_factor*(self.in_tube_length/(2*self.tube_radius))*(self.rho_w*(Q/self.tube_area)**2/2)
+            backpressure = 0
         pressure = head_loss+backpressure
         return pressure
 
@@ -96,7 +101,9 @@ class Pump:
         omegadot = self.omegadot(state)     #Change in omega is omegadot
         voldot = 0
         for mechanism in self.mechanisms:
-            voldot += mechanism.Q(state)    #Change in volume pumped is flow
+            Q = mechanism.Q(state)
+            if Q > 0:               #Check if the piston is expelling water
+                voldot += Q         #Change in volume pumped is flow
         #Assemble statedot variable for numerical integrator
         statedot = [thetadot, omegadot, voldot]
         return statedot
@@ -170,6 +177,7 @@ class Piston:
         T_rod = torque/(self.r_c*sin(pi-theta-self.alpha(theta)))
         #Calculate power lost to friction
         power_lost_friction = abs(self.mu*T_rod*sin(theta)*self.xdot(state))
+        print power_lost_friction
         #Power leaving the system is the sum of lost powers
         power_out = pumpingpower + power_lost_friction
         return power_out
