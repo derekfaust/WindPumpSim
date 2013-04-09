@@ -15,9 +15,9 @@ from pump import *                  #Pump components
 def waterpumped(x):
     crank_radius = x[0]
     rod_length = x[1] 
-    print 'Calculating with crank radius ' + str(crank_radius) + ' and rod length' + str(rod_length)
+    print 'Calculating with crank radius ' + str(crank_radius) + ' and rod length ' + str(rod_length)
     #Simulation Parameters
-    timespan = [0,20]   #Beginning and ending times
+    timespan = [0,30]   #Beginning and ending times
     timesteps = 1000    #Number of timesteps
     initial_theta= 0    #Initial angle of turbine and pump
     initial_omega= 8    #Set the initial speed. Zero yeilds no torque
@@ -83,16 +83,14 @@ def waterpumped(x):
     plot.plot(times, states[:,2]*1000, 'k', times, times/60, 'g')
     plot.xlabel('Time (s)')
     plot.ylabel('Volume Pumped (L)')
-    plot.title('Pump')
     fig.tight_layout()
     plot.show()
-    
+    fig.savefig('Performance.png')
+
     #Return the amount of water pumped
-    return states[-1,2]
+    return states[-1,2]*1000
 
 #If this file is executed, do this:
 if __name__ == '__main__':
     #Find the amount of water pumped at a given time.
-    total_length = 10*.0254
-    for r in np.linspace(.01,.05,10):
-        print waterpumped((r , total_length-2*r))
+    print waterpumped((.0508, 17.15))
